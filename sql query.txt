@@ -1,0 +1,107 @@
+drop table if exists friendship;
+drop table if exists review ;
+drop table if exists tip;
+drop table if exists checkin;
+drop table if exists business;
+drop table if exists user_yelp;
+-- ABOVE STATEMENTS are OPTIONAL ------
+
+drop trigger if exists update_business_review_count;
+drop trigger if exists update_business_stars;
+drop trigger if exists check_friend_review;
+
+---- OPTIONAL ADDING "ON DELETE NO ACTION ON UPDATE NO ACTION"  -------
+
+/*
+Your order must satisfy:
+friendship AFTER user_yelp;
+checkin AFTER business
+tip and review AFTER friendship and business
+*/
+
+CREATE TABLE user_yelp (
+    user_id VARCHAR(22) PRIMARY KEY,
+    name VARCHAR(35) NOT NULL,
+    review_count INT DEFAULT 0 CHECK (review_count >= 0),
+    yelping_since DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    useful INT DEFAULT 0 CHECK (useful >= 0),
+    funny INT DEFAULT 0 CHECK (funny >= 0),
+    cool INT DEFAULT 0 CHECK (cool >= 0),
+    fans INT DEFAULT 0 CHECK (fans >= 0),
+    average_stars DECIMAL(3, 2) CHECK (average_stars BETWEEN 1 AND 5)
+);
+
+CREATE TABLE business (
+    business_id VARCHAR(22) PRIMARY KEY,
+    name VARCHAR(60) NOT NULL,
+    address VARCHAR(75),
+    city VARCHAR(30) NOT NULL,
+    postal_code VARCHAR(7),
+    stars DECIMAL(2, 1) CHECK (stars BETWEEN 1 AND 5),
+    review_count INT DEFAULT 0 CHECK (review_count >= 0)
+);
+
+
+CREATE TABLE checkin (
+    checkin_id INT PRIMARY KEY,
+    business_id VARCHAR(22) NOT NULL,
+    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (business_id) REFERENCES business(business_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+CREATE TABLE tip (
+    tip_id INT PRIMARY KEY,
+    user_id VARCHAR(22) NOT NULL,
+    business_id VARCHAR(22) NOT NULL,
+    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    compliment_count INT DEFAULT 0 CHECK (compliment_count >= 0),
+    FOREIGN KEY (user_id) REFERENCES user_yelp(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (business_id) REFERENCES business(business_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+CREATE TABLE review (
+    review_id VARCHAR(22) PRIMARY KEY,
+    user_id VARCHAR(22) NOT NULL,
+    business_id VARCHAR(22) NOT NULL,
+    stars INT NOT NULL CHECK (stars BETWEEN 1 AND 5),
+    useful INT DEFAULT 0 CHECK (useful >= 0),
+    funny INT DEFAULT 0 CHECK (funny >= 0),
+    cool INT DEFAULT 0 CHECK (cool >= 0),
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user_yelp(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (business_id) REFERENCES business(business_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+CREATE TABLE friendship (
+    user_id VARCHAR(22),
+    friend VARCHAR(22),
+    PRIMARY KEY (user_id, friend),
+    FOREIGN KEY (user_id) REFERENCES user_yelp(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (friend) REFERENCES user_yelp(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+
+
+BULK INSERT user_yelp
+FROM 'd:\userdata\afa85354\user_yelp.csv'
+WITH (FIELDTERMINATOR=',', ROWTERMINATOR='\n', FIRSTROW=2);
+
+BULK INSERT business
+FROM 'd:\userdata\afa85354\business.csv'
+WITH (FIELDTERMINATOR=',', ROWTERMINATOR='\n', FIRSTROW=2);
+
+BULK INSERT checkin
+FROM 'd:\userdata\afa85354\checkin.csv'
+WITH (FIELDTERMINATOR=',', ROWTERMINATOR='\n', FIRSTROW=2);
+
+BULK INSERT tip
+FROM 'd:\userdata\afa85354\tip.csv'
+WITH (FIELDTERMINATOR=',', ROWTERMINATOR='\n', FIRSTROW=2);
+
+BULK INSERT review
+FROM 'd:\userdata\afa85354\review.csv'
+WITH (FIELDTERMINATOR=',', ROWTERMINATOR='\n', FIRSTROW=2);
+
+BULK INSERT friendship
+FROM 'd:\userdata\afa85354\friendship.csv'
+WITH (FIELDTERMINATOR=',', ROWTERMINATOR='\n', FIRSTROW=2);
